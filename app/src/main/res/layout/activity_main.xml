@@ -4,14 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     tools:context="com.leo.customviewproject.MainActivity">
 
-    <com.leo.customviewproject.photoview.PhotoView
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/wallpaper"
-        android:background="@color/colorAccent"
-        />
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

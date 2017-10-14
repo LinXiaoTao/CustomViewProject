@@ -18,6 +18,9 @@
         </activity>
 
         <activity android:name=".photoview.PhotoViewActivity"/>
+
+        <activity android:name=".tape.SlideTapeActivity"/>
+
     </application>
 
 </manifest>

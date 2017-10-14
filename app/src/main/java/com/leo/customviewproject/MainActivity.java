@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.leo.customviewproject.photoview.PhotoViewActivity;
+import com.leo.customviewproject.tape.SlideTapeActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     {
         mModels.add(new Model(PhotoViewActivity.class, "PhotoView"));
+        mModels.add(new Model(SlideTapeActivity.class, "SlideTape"));
     }
 
     @Override

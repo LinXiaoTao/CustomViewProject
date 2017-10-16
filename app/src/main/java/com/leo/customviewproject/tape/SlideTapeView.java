@@ -16,12 +16,12 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewParent;
+import android.widget.EdgeEffect;
 import android.widget.OverScroller;
 
 import java.math.BigDecimal;
 
 /**
- * 10 15 09
  * 滑动卷尺
  * Created on 2017/10/13 上午10:51.
  * leo linxiaotao1993@vip.qq.com
@@ -75,6 +75,8 @@ public final class SlideTapeView extends View {
     private final int mMinimumHeight;
     private CallBack mCallBack;
     private ValueAnimator mRunAnimator;
+    private EdgeEffect mEdgeGlowLeft;
+    private EdgeEffect mEdgeGlowRight;
 
     {
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -173,6 +175,38 @@ public final class SlideTapeView extends View {
     }
 
     @Override
+    @SuppressWarnings({"SuspiciousNameCombination"})
+    public void draw(Canvas canvas) {
+        super.draw(canvas);
+        //HorzontalScrollView
+        if (mEdgeGlowLeft != null && !mEdgeGlowLeft.isFinished()) {
+            final int restoreCount = canvas.save();
+
+            canvas.rotate(270);
+            //坐标系旋转后，需要将绘制的 EdgeEffect 偏移回来
+            canvas.translate(-getHeight(), 0);
+
+            mEdgeGlowLeft.setSize(getHeight(), getWidth());
+            if (mEdgeGlowLeft.draw(canvas)) {
+                postInvalidateOnAnimation();
+            }
+
+            canvas.restoreToCount(restoreCount);
+        } else if (mEdgeGlowRight != null && !mEdgeGlowRight.isFinished()) {
+            final int restoreCount = canvas.save();
+            canvas.rotate(90);
+            canvas.translate(0, -getWidth());
+
+            mEdgeGlowRight.setSize(getHeight(), getWidth());
+            if (mEdgeGlowRight.draw(canvas)) {
+                postInvalidateOnAnimation();
+            }
+
+            canvas.restoreToCount(restoreCount);
+        }
+    }
+
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
@@ -244,13 +278,27 @@ public final class SlideTapeView extends View {
                 }
                 if (mIsBeingDragged) {
                     mOffsetLeft += distanceX;
+
                     if (mOffsetLeft > mMaxOffsetLeft) {
+                        ensureGlows();
+                        mEdgeGlowRight.onPull(distanceX / getWidth(), event.getY() / getHeight());
+                        if (!mEdgeGlowLeft.isFinished()) {
+                            mEdgeGlowLeft.onRelease();
+                        }
                         mOffsetLeft = mMaxOffsetLeft;
                     }
                     if (mOffsetLeft < mMinOffsetLeft) {
+                        //edge
+                        ensureGlows();
+                        mEdgeGlowLeft.onPull(distanceX / getWidth(), 1 - event.getY() / getHeight());
+                        Log.d(TAG, "onTouchEvent: deltaDistance: " + distanceX / getWidth());
+                        if (!mEdgeGlowRight.isFinished()) {
+                            mEdgeGlowRight.onRelease();
+                        }
                         mOffsetLeft = mMinOffsetLeft;
                     }
                     postInvalidateOnAnimation();
+
                 }
                 mLastMotionX = event.getX();
                 break;
@@ -271,6 +319,12 @@ public final class SlideTapeView extends View {
                 }
                 mIsBeingDragged = false;
                 recycleVelocityTracker();
+                if (mEdgeGlowLeft != null) {
+                    mEdgeGlowLeft.onRelease();
+                }
+                if (mEdgeGlowRight != null) {
+                    mEdgeGlowRight.onRelease();
+                }
                 break;
         }
 
@@ -286,16 +340,28 @@ public final class SlideTapeView extends View {
     public void computeScroll() {
         super.computeScroll();
         if (mScroller.computeScrollOffset()) {
-            mOffsetLeft += (mLastFlingX - mScroller.getCurrX());
-            if (mOffsetLeft > mMaxOffsetLeft) {
-                mOffsetLeft = mMaxOffsetLeft;
+            int newOffsetLeft = mOffsetLeft + (mLastFlingX - mScroller.getCurrX());
+
+            if (mOffsetLeft < mMaxOffsetLeft && newOffsetLeft > mMaxOffsetLeft) {
+                ensureGlows();
+                mEdgeGlowRight.onAbsorb((int) mScroller.getCurrVelocity());
+            } else if (mOffsetLeft > mMinOffsetLeft && newOffsetLeft < mMinOffsetLeft) {
+                ensureGlows();
+                mEdgeGlowLeft.onAbsorb((int) mScroller.getCurrVelocity());
             }
-            if (mOffsetLeft < mMinOffsetLeft) {
-                mOffsetLeft = mMinOffsetLeft;
+
+            if (newOffsetLeft > mMaxOffsetLeft) {
+                newOffsetLeft = mMaxOffsetLeft;
             }
+            if (newOffsetLeft < mMinOffsetLeft) {
+                newOffsetLeft = mMinOffsetLeft;
+            }
+
+            mOffsetLeft = newOffsetLeft;
+
             postInvalidateOnAnimation();
             mLastFlingX = mScroller.getCurrX();
-        }else {
+        } else {
             if (mStartFling) {
                 mStartFling = false;
                 Log.d(TAG, "computeScroll: checkOffsetLeft");
@@ -388,6 +454,22 @@ public final class SlideTapeView extends View {
             return;
         }
         mCallBack = callback;
+    }
+
+    private void ensureGlows() {
+        if (getOverScrollMode() != View.OVER_SCROLL_NEVER) {
+            if (mEdgeGlowLeft == null) {
+                mEdgeGlowLeft = new EdgeEffect(getContext());
+                mEdgeGlowLeft.setColor(INDICATOR_COLOR);
+            }
+            if (mEdgeGlowRight == null) {
+                mEdgeGlowRight = new EdgeEffect(getContext());
+                mEdgeGlowRight.setColor(INDICATOR_COLOR);
+            }
+        } else {
+            mEdgeGlowLeft = null;
+            mEdgeGlowRight = null;
+        }
     }
 
     private boolean correctRangeOfValues() {

@@ -32,10 +32,9 @@ public class SlideTapeActivity extends AppCompatActivity {
         mTextView.setTextColor(INDICATOR_COLOR);
 
         mSlideTapeView = (SlideTapeView) findViewById(R.id.slideTape);
-        mSlideTapeView.setValue(30, 200);
+        mSlideTapeView.setValue(30, 50);
         mSlideTapeView.setLongUnix(1);
         mSlideTapeView.setShortPointCount(10);
-        mSlideTapeView.moveToValue(100.5222f);
         mSlideTapeView.setCallBack(new SlideTapeView.CallBack() {
             @Override
             public void onSlide(float current) {

@@ -8,3 +8,6 @@
 * 处理多指触摸
 * 滑动边缘效果
 
+![单个](https://github.com/LinXiaoTao/CustomViewProject/blob/master/gif/slide_tape/single.gif)
+
+![多个](https://github.com/LinXiaoTao/CustomViewProject/blob/master/gif/slide_tape/more.gif)

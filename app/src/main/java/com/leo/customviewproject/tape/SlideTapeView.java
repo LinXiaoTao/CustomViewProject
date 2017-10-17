@@ -3,6 +3,7 @@ package com.leo.customviewproject.tape;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,6 +19,8 @@ import android.view.ViewConfiguration;
 import android.view.ViewParent;
 import android.widget.EdgeEffect;
 import android.widget.OverScroller;
+
+import com.leo.customviewproject.R;
 
 import java.math.BigDecimal;
 
@@ -65,9 +68,11 @@ public final class SlideTapeView extends View {
     private int mLongUnix;
     //短指针单位
     private BigDecimal mShortUnix;
+
     private VelocityTracker mVelocityTracker;
     private final int mMaximumFlingVelocity;
     private final int mMinimumFlingVelocity;
+
     private final int mTouchSlop;
     private float mDownMotionX;
     private float mLastMotionX;
@@ -75,8 +80,11 @@ public final class SlideTapeView extends View {
     private final int mMinimumHeight;
     private CallBack mCallBack;
     private ValueAnimator mRunAnimator;
+
     private EdgeEffect mEdgeGlowLeft;
     private EdgeEffect mEdgeGlowRight;
+
+    private int mActivePointerId = INVALID_POINTER;
 
     {
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -100,6 +108,7 @@ public final class SlideTapeView extends View {
     private static final int POINT_COLOR = Color.rgb(210, 215, 209);
     private static final int TEXT_COLOR = Color.BLACK;
     private static final int MAXIMUM_SHORT_POINT_COUNT = 10;
+    private static final int INVALID_POINTER = -1;
 
     private static final String TAG = "SlideTapeView";
 
@@ -136,6 +145,17 @@ public final class SlideTapeView extends View {
         mTouchSlop = viewConfiguration.getScaledTouchSlop();
 
         mScroller = new OverScroller(context);
+
+        init(context, attrs);
+
+        if (isInEditMode()) {
+            if (mStartValue == 0 && mEndValue == 0) {
+                setValue(0, 100);
+            }
+            if (mShortPointCount == 0) {
+                setShortPointCount(10);
+            }
+        }
     }
 
     @Override
@@ -263,13 +283,33 @@ public final class SlideTapeView extends View {
                         parent.requestDisallowInterceptTouchEvent(true);
                     }
                 }
-                mDownMotionX = event.getX();
-                mLastMotionX = event.getX();
+                mActivePointerId = event.getPointerId(0);
+                mDownMotionX = event.getX(0);
+                mLastMotionX = event.getX(0);
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                final int index = event.getActionIndex();
+                mDownMotionX = event.getX(index);
+                mLastMotionX = event.getX(index);
+                mActivePointerId = event.getPointerId(index);
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                onSecondaryPointerUp(event);
                 break;
             case MotionEvent.ACTION_MOVE:
-                float distanceX = mLastMotionX - event.getX();
+                final int activePointerId = mActivePointerId;
+                if (activePointerId == INVALID_POINTER) {
+                    break;
+                }
+                final int pointerIndex = event.findPointerIndex(activePointerId);
+                if (pointerIndex == -1) {
+                    Log.e(TAG, "onTouchEvent: Invalid pointerId = " + activePointerId);
+                    break;
+                }
+
+                float distanceX = mLastMotionX - event.getX(pointerIndex);
                 Log.d(TAG, "onTouchEvent: distanceX:" + distanceX);
-                if (!mIsBeingDragged && Math.abs(mDownMotionX - event.getX()) > mTouchSlop) {
+                if (!mIsBeingDragged && Math.abs(mDownMotionX - event.getX(pointerIndex)) > mTouchSlop) {
                     mIsBeingDragged = true;
                     ViewParent parent = getParent();
                     if (parent != null) {
@@ -281,7 +321,7 @@ public final class SlideTapeView extends View {
 
                     if (mOffsetLeft > mMaxOffsetLeft) {
                         ensureGlows();
-                        mEdgeGlowRight.onPull(distanceX / getWidth(), event.getY() / getHeight());
+                        mEdgeGlowRight.onPull(distanceX / getWidth(), event.getY(pointerIndex) / getHeight());
                         if (!mEdgeGlowLeft.isFinished()) {
                             mEdgeGlowLeft.onRelease();
                         }
@@ -290,7 +330,7 @@ public final class SlideTapeView extends View {
                     if (mOffsetLeft < mMinOffsetLeft) {
                         //edge
                         ensureGlows();
-                        mEdgeGlowLeft.onPull(distanceX / getWidth(), 1 - event.getY() / getHeight());
+                        mEdgeGlowLeft.onPull(distanceX / getWidth(), 1 - event.getY(pointerIndex) / getHeight());
                         Log.d(TAG, "onTouchEvent: deltaDistance: " + distanceX / getWidth());
                         if (!mEdgeGlowRight.isFinished()) {
                             mEdgeGlowRight.onRelease();
@@ -300,7 +340,7 @@ public final class SlideTapeView extends View {
                     postInvalidateOnAnimation();
 
                 }
-                mLastMotionX = event.getX();
+                mLastMotionX = event.getX(pointerIndex);
                 break;
             case MotionEvent.ACTION_UP:
                 final VelocityTracker velocityTracker = mVelocityTracker;
@@ -325,6 +365,7 @@ public final class SlideTapeView extends View {
                 if (mEdgeGlowRight != null) {
                     mEdgeGlowRight.onRelease();
                 }
+                mActivePointerId = INVALID_POINTER;
                 break;
         }
 
@@ -440,7 +481,7 @@ public final class SlideTapeView extends View {
             value = mStartValue;
         }
 
-        int offsetLeft = (int) (value / mLongUnix) * mLongPointInterval;
+        int offsetLeft = (int) ((value - mStartValue) / mLongUnix) * mLongPointInterval;
         if (mShortPointCount != 0) {
             BigDecimal count = new BigDecimal(value % mLongUnix).divide(mShortUnix, 2, BigDecimal.ROUND_DOWN);
             offsetLeft += count.intValue() * mShortPointInterval;
@@ -454,6 +495,37 @@ public final class SlideTapeView extends View {
             return;
         }
         mCallBack = callback;
+    }
+
+    private void init(Context context, AttributeSet attrs) {
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.SlideTapeView, 0, 0);
+        try {
+            setValue(typedArray.getInt(R.styleable.SlideTapeView_startValue, 0), typedArray.getInt(R.styleable.SlideTapeView_endValue, 0));
+            setShortPointCount(typedArray.getInt(R.styleable.SlideTapeView_shortPointCount, 0));
+            setLongUnix(typedArray.getInt(R.styleable.SlideTapeView_longUnix, 1));
+            moveToValue(typedArray.getInt(R.styleable.SlideTapeView_currentValue, 0));
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (typedArray != null) {
+                typedArray.recycle();
+            }
+        }
+
+    }
+
+    private void onSecondaryPointerUp(MotionEvent ev) {
+        final int pointerIndex = ev.getActionIndex();
+        final int pointerId = ev.getPointerId(pointerIndex);
+        if (pointerId == mActivePointerId) {
+            final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+            mActivePointerId = ev.getPointerId(newPointerIndex);
+            mDownMotionX = ev.getX(newPointerIndex);
+            mLastMotionX = ev.getX(newPointerIndex);
+            if (mVelocityTracker != null) {
+                mVelocityTracker.clear();
+            }
+        }
     }
 
     private void ensureGlows() {

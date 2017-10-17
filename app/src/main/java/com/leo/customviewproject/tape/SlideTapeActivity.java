@@ -31,6 +31,7 @@ public class SlideTapeActivity extends AppCompatActivity {
         mTextView = (TextView) findViewById(R.id.text);
         mTextView.setTextColor(INDICATOR_COLOR);
 
+
         mSlideTapeView = (SlideTapeView) findViewById(R.id.slideTape);
         mSlideTapeView.setValue(30, 50);
         mSlideTapeView.setLongUnix(1);

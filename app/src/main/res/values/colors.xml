@@ -4,4 +4,5 @@
     <color name="colorPrimaryDark">#142D3E</color>
     <color name="colorAccent">#142D3E</color>
     <color name="backgroup">#ddd</color>
+    <color name="white">#FFFFFF</color>
 </resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <declare-styleable name="SlideTapeView">
+        <attr name="startValue" format="integer"/>
+        <attr name="endValue" format="integer"/>
+        <attr name="currentValue" format="float"/>
+        <attr name="shortPointCount" format="integer"/>
+        <attr name="longUnix" format="integer"/>
+    </declare-styleable>
+</resources>

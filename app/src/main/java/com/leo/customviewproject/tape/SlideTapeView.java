@@ -500,7 +500,11 @@ public final class SlideTapeView extends View {
     private void init(Context context, AttributeSet attrs) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.SlideTapeView, 0, 0);
         try {
-            setValue(typedArray.getInt(R.styleable.SlideTapeView_startValue, 0), typedArray.getInt(R.styleable.SlideTapeView_endValue, 0));
+            int startValue = typedArray.getInt(R.styleable.SlideTapeView_startValue, 0);
+            int endValue = typedArray.getInt(R.styleable.SlideTapeView_endValue, 0);
+            if (!(startValue == 0 && endValue == 0)) {
+                setValue(startValue, endValue);
+            }
             setShortPointCount(typedArray.getInt(R.styleable.SlideTapeView_shortPointCount, 0));
             setLongUnix(typedArray.getInt(R.styleable.SlideTapeView_longUnix, 1));
             moveToValue(typedArray.getInt(R.styleable.SlideTapeView_currentValue, 0));

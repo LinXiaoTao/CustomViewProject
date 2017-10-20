@@ -8,6 +8,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -412,6 +414,24 @@ public final class SlideTapeView extends View {
 
     }
 
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Parcelable superParcelable = super.onSaveInstanceState();
+        SavedState savedState = new SavedState(superParcelable);
+        savedState.offsetLeft = mOffsetLeft;
+        return savedState;
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof SavedState) {
+            SavedState savedState = (SavedState) state;
+            mOffsetLeft = savedState.offsetLeft;
+            postInvalidate();
+        }
+        super.onRestoreInstanceState(state);
+    }
+
     /**
      * 设置起始值和结束值
      * 结束值必须大于起始值
@@ -674,6 +694,40 @@ public final class SlideTapeView extends View {
 
     public static interface CallBack {
         void onSlide(float current);
+    }
+
+    private static class SavedState extends BaseSavedState {
+
+        private int offsetLeft;
+
+        private SavedState(Parcel source) {
+            super(source);
+            offsetLeft = source.readInt();
+        }
+
+        private SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            super.writeToParcel(out, flags);
+            out.writeInt(offsetLeft);
+        }
+
+        public static final Parcelable.Creator<SavedState> CREATOR = new Parcelable.Creator<SavedState>() {
+
+            @Override
+            public SavedState createFromParcel(Parcel source) {
+                return new SavedState(source);
+            }
+
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+
     }
 
 }

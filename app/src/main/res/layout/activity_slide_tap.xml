@@ -20,6 +20,7 @@
     <com.leo.customviewproject.tape.SlideTapeView
         android:id="@+id/slideTape"
         android:layout_width="match_parent"
+        android:overScrollMode="ifContentScrolls"
         android:layout_height="wrap_content"
         android:paddingBottom="15dp"
         />

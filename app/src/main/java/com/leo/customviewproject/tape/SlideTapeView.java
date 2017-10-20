@@ -321,21 +321,30 @@ public final class SlideTapeView extends View {
                 if (mIsBeingDragged) {
                     mOffsetLeft += distanceX;
 
+                    final int range = getOffsetLeftRange();
+                    final int overscrollMode = getOverScrollMode();
+                    boolean canOverscroll = overscrollMode == View.OVER_SCROLL_ALWAYS || (overscrollMode == View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                            && range > 0);
+
                     if (mOffsetLeft > mMaxOffsetLeft) {
-                        ensureGlows();
-                        mEdgeGlowRight.onPull(distanceX / getWidth(), event.getY(pointerIndex) / getHeight());
-                        if (!mEdgeGlowLeft.isFinished()) {
-                            mEdgeGlowLeft.onRelease();
+                        if (canOverscroll){
+                            ensureGlows();
+                            mEdgeGlowRight.onPull(distanceX / getWidth(), event.getY(pointerIndex) / getHeight());
+                            if (!mEdgeGlowLeft.isFinished()) {
+                                mEdgeGlowLeft.onRelease();
+                            }
                         }
                         mOffsetLeft = mMaxOffsetLeft;
                     }
                     if (mOffsetLeft < mMinOffsetLeft) {
-                        //edge
-                        ensureGlows();
-                        mEdgeGlowLeft.onPull(distanceX / getWidth(), 1 - event.getY(pointerIndex) / getHeight());
-                        Log.d(TAG, "onTouchEvent: deltaDistance: " + distanceX / getWidth());
-                        if (!mEdgeGlowRight.isFinished()) {
-                            mEdgeGlowRight.onRelease();
+                        if (canOverscroll){
+                            //edge
+                            ensureGlows();
+                            mEdgeGlowLeft.onPull(distanceX / getWidth(), 1 - event.getY(pointerIndex) / getHeight());
+                            Log.d(TAG, "onTouchEvent: deltaDistance: " + distanceX / getWidth());
+                            if (!mEdgeGlowRight.isFinished()) {
+                                mEdgeGlowRight.onRelease();
+                            }
                         }
                         mOffsetLeft = mMinOffsetLeft;
                     }
@@ -385,10 +394,15 @@ public final class SlideTapeView extends View {
         if (mScroller.computeScrollOffset()) {
             int newOffsetLeft = mOffsetLeft + (mLastFlingX - mScroller.getCurrX());
 
-            if (mOffsetLeft < mMaxOffsetLeft && newOffsetLeft > mMaxOffsetLeft) {
+            final int range = getOffsetLeftRange();
+            final int overscrollMode = getOverScrollMode();
+            boolean canOverscroll = overscrollMode == View.OVER_SCROLL_ALWAYS || (overscrollMode == View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                    && range > 0);
+
+            if (canOverscroll && mOffsetLeft < mMaxOffsetLeft && newOffsetLeft > mMaxOffsetLeft) {
                 ensureGlows();
                 mEdgeGlowRight.onAbsorb((int) mScroller.getCurrVelocity());
-            } else if (mOffsetLeft > mMinOffsetLeft && newOffsetLeft < mMinOffsetLeft) {
+            } else if (canOverscroll && mOffsetLeft > mMinOffsetLeft && newOffsetLeft < mMinOffsetLeft) {
                 ensureGlows();
                 mEdgeGlowLeft.onAbsorb((int) mScroller.getCurrVelocity());
             }
@@ -668,6 +682,10 @@ public final class SlideTapeView extends View {
 
         Log.d(TAG, "calculate: mLongPointInterval:" + mLongPointInterval + "    mShortPointInterval:" + mShortPointInterval);
 
+    }
+
+    private int getOffsetLeftRange() {
+        return Math.max(0, mMaxOffsetLeft);
     }
 
     private void initOrResetVelocityTracker() {

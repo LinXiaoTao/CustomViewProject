@@ -33,7 +33,7 @@ public class SlideTapeActivity extends AppCompatActivity {
 
 
         mSlideTapeView = (SlideTapeView) findViewById(R.id.slideTape);
-        mSlideTapeView.setValue(30, 50);
+        mSlideTapeView.setValue(30, 31);
         mSlideTapeView.setLongUnix(1);
         mSlideTapeView.setShortPointCount(10);
         mSlideTapeView.setCallBack(new SlideTapeView.CallBack() {

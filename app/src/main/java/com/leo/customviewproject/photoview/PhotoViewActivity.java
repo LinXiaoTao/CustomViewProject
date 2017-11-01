@@ -2,8 +2,8 @@ package com.leo.customviewproject.photoview;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 
+import com.leo.customviewproject.BaseAcivity;
 import com.leo.customviewproject.R;
 
 /**
@@ -11,7 +11,7 @@ import com.leo.customviewproject.R;
  * leo linxiaotao1993@vip.qq.com
  */
 
-public class PhotoViewActivity extends AppCompatActivity {
+public class PhotoViewActivity extends BaseAcivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

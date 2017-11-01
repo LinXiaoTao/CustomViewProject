@@ -3,7 +3,6 @@ package com.leo.customviewproject;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.TypedValue;
@@ -13,17 +12,19 @@ import android.widget.TextView;
 
 import com.leo.customviewproject.photoview.PhotoViewActivity;
 import com.leo.customviewproject.tape.SlideTapeActivity;
+import com.leo.customviewproject.wheel.WheelViewActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseAcivity {
 
     private final List<Model> mModels = new ArrayList<>();
 
     {
         mModels.add(new Model(PhotoViewActivity.class, "PhotoView"));
         mModels.add(new Model(SlideTapeActivity.class, "SlideTape"));
+        mModels.add(new Model(WheelViewActivity.class,"WheelView"));
     }
 
     @Override
@@ -67,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
                 return mModels.size();
             }
         });
+    }
+
+    @Override
+    protected boolean needBackIcon() {
+        return false;
     }
 
     private class Model {

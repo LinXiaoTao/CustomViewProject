@@ -3,9 +3,9 @@ package com.leo.customviewproject.tape;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
+import com.leo.customviewproject.BaseAcivity;
 import com.leo.customviewproject.R;
 
 import java.util.Locale;
@@ -15,7 +15,7 @@ import java.util.Locale;
  * leo linxiaotao1993@vip.qq.com
  */
 
-public class SlideTapeActivity extends AppCompatActivity {
+public class SlideTapeActivity extends BaseAcivity {
 
     private SlideTapeView mSlideTapeView;
     private TextView mTextView;

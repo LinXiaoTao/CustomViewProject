@@ -16,11 +16,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
         <activity android:name=".photoview.PhotoViewActivity"/>
-
         <activity android:name=".tape.SlideTapeActivity"/>
-
+        <activity android:name=".wheel.WheelViewActivity"/>
     </application>
 
 </manifest>

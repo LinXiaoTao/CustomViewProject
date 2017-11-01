@@ -10,6 +10,9 @@
     android:orientation="vertical"
     tools:context=".tape.SlideTapeActivity">
 
+    <include
+        layout="@layout/include_toolbar"/>
+
     <TextView
         android:id="@+id/text"
         android:layout_width="wrap_content"

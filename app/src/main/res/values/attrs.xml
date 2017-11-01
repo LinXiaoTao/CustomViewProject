@@ -8,4 +8,34 @@
         <attr name="shortPointCount" format="integer"/>
         <attr name="longUnix" format="integer"/>
     </declare-styleable>
+
+    <declare-styleable name="WheelView">
+        <attr name="textSize" format="dimension"/>
+        <attr name="textVerticalSpacing" format="dimension"/>
+        <attr name="normalTextColor" format="color"/>
+        <attr name="selectedTextColor" format="color"/>
+        <attr name="selectedLineColor" format="color"/>
+        <attr name="visibilityCount" format="integer"/>
+        <attr name="textGravity" format="integer">
+            <flag name="top" value="0x30"/>
+
+            <flag name="bottom" value="0x50"/>
+
+            <flag name="left" value="0x03"/>
+
+            <flag name="right" value="0x05"/>
+
+            <flag name="center_vertical" value="0x10"/>
+
+            <flag name="center_horizontal" value="0x01"/>
+
+            <flag name="center" value="0x11"/>
+
+            <flag name="start" value="0x00800003"/>
+
+            <flag name="end" value="0x00800005"/>
+        </attr>
+        <attr name="selectPosition" format="integer"/>
+    </declare-styleable>
+
 </resources>

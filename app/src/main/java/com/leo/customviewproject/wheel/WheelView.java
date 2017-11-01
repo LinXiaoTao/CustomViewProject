@@ -1,6 +1,7 @@
 package com.leo.customviewproject.wheel;
 
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -13,7 +14,6 @@ import android.support.annotation.Px;
 import android.support.v4.util.Pools;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -23,6 +23,7 @@ import android.view.ViewParent;
 import android.widget.OverScroller;
 
 import com.leo.customviewproject.R;
+import com.leo.customviewproject.utils.DisplayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,9 +38,9 @@ public final class WheelView extends View {
     private List<String> mDataSources;
     private int mVisibilityCount = AUTO_VISIBILITY_COUNT;
     @Px
-    private int mTextSize = sp2px(16);
+    private int mTextSize = (int) DisplayUtils.sp2px(16);
     @Px
-    private int mTextVerticalSpacing = dp2px(10);
+    private int mTextVerticalSpacing = (int) DisplayUtils.dp2px(10);
     @ColorInt
     private int mNormalTextColor = Color.LTGRAY;
     @ColorInt
@@ -48,7 +49,7 @@ public final class WheelView extends View {
     private int mSelectedLineColor = Color.BLACK;
     private int mTextGravity = Gravity.CENTER;
     private CallBack mCallBack;
-    private int mSelectPosition;
+    private int mSelectPosition = -1;
 
     private final Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mDrawPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -60,6 +61,7 @@ public final class WheelView extends View {
     private int mMaxTextWidth, mMaxTextHeight;
     private int mDistanceY;
     private int mMaximumDistanceY, mMinimumDistanceY;
+    private boolean mNeedCalculate;
     /** touch */
     private boolean mIsBeingDragged;
     private final int mTouchSlop;
@@ -74,9 +76,10 @@ public final class WheelView extends View {
     private float mFlingY;
     private ValueAnimator mRunAnimator;
 
+    private static final String TAG = "WheelView";
+
     private static final int DEFALUT_VISIBILITY_COUNT = 5;
     private static final int AUTO_VISIBILITY_COUNT = -1;
-    private static final String TAG = "WheelView";
     private static final int INVALID_POINTER = -1;
 
     private static final Pools.Pool<Rect> RECT_POOL = new Pools.SimplePool<>(20);
@@ -121,104 +124,88 @@ public final class WheelView extends View {
         init(context, attrs);
     }
 
-    public WheelView setSelectPosition(int position) {
-        if (mSelectPosition == position) {
-            return this;
-        }
-        if (!hasDataSource()) {
-            mSelectPosition = position;
-            return this;
+    public void setSelectPosition(int position) {
+        if (!hasDataSource() || mSelectPosition == position) {
+            return;
         }
         if (position > (mDataSources.size() - 1) || position < 0) {
-            return this;
+            return;
         }
         int newDistance = position * mTextRect.height();
         animChangeDistanceY(newDistance);
-        return this;
     }
 
-    public WheelView setDataSources(List<String> dataSources) {
+    public void setDataSources(List<String> dataSources) {
         if (mDataSources == dataSources) {
-            return this;
+            return;
         }
         mDataSources = dataSources;
-        if (mSelectPosition > (mDataSources.size() - 1) || mSelectPosition < 0) {
-            mSelectPosition = 0;
-        }
+        mSelectPosition = -1;
         requestLayout();
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setVisibilityCount(int visibilityCount) {
+    public void setVisibilityCount(int visibilityCount) {
         if (mVisibilityCount == visibilityCount) {
-            return this;
+            return;
         }
         mVisibilityCount = visibilityCount;
         requestLayout();
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setTextSize(@Px int textSize) {
+    public void setTextSize(@Px int textSize) {
         if (mTextSize == textSize) {
-            return this;
+            return;
         }
         mTextSize = textSize;
         requestLayout();
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setTextVerticalSpacing(int textVerticalSpacing) {
+    public void setTextVerticalSpacing(int textVerticalSpacing) {
         if (mTextVerticalSpacing == textVerticalSpacing) {
-            return this;
+            return;
         }
         mTextVerticalSpacing = textVerticalSpacing;
         requestLayout();
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setNormalTextColor(@ColorInt int normalTextColor) {
+    public void setNormalTextColor(@ColorInt int normalTextColor) {
         if (mNormalTextColor == normalTextColor) {
-            return this;
+            return;
         }
         mNormalTextColor = normalTextColor;
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setSelectedTextColor(@ColorInt int selectedTextColor) {
+    public void setSelectedTextColor(@ColorInt int selectedTextColor) {
         if (mSelectedTextColor == selectedTextColor) {
-            return this;
+            return;
         }
         mSelectedTextColor = selectedTextColor;
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setSelectedLineColor(@ColorInt int selectedLineColor) {
+    public void setSelectedLineColor(@ColorInt int selectedLineColor) {
         if (mSelectedLineColor == selectedLineColor) {
-            return this;
+            return;
         }
         mSelectedLineColor = selectedLineColor;
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setTextGravity(int textGravity) {
+    public void setTextGravity(int textGravity) {
         if (mTextGravity == textGravity) {
-            return this;
+            return;
         }
         mTextGravity = textGravity;
         postInvalidateOnAnimation();
-        return this;
     }
 
-    public WheelView setCallBack(CallBack callBack) {
+    public void setCallBack(CallBack callBack) {
         mCallBack = callBack;
-        return this;
     }
 
     @Override
@@ -233,16 +220,14 @@ public final class WheelView extends View {
         } else {
             wantHeight += mTextRect.height() * DEFALUT_VISIBILITY_COUNT;
         }
-        Log.d(TAG, "onMeasure: wantWidth: " + wantWith + ";wantHeight: " + wantHeight);
         setMeasuredDimension(resolveSize(wantWith, widthMeasureSpec), resolveSize(wantHeight, heightMeasureSpec));
+        mNeedCalculate = true;
     }
 
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        mContentRect.set(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(), h - getPaddingBottom());
-        Log.d(TAG, "onSizeChanged: contentRect: " + mContentRect.toShortString());
+    private void calculate() {
+        mContentRect.set(getPaddingLeft(), getPaddingTop(), getMeasuredWidth() - getPaddingRight(),
+                getMeasuredHeight() - getPaddingBottom());
         if (mVisibilityCount > 0) {
             mTextRect.set(0, 0, mContentRect.width(),
                     (int) (mContentRect.height() * 1.0 / mVisibilityCount));
@@ -250,8 +235,6 @@ public final class WheelView extends View {
             mTextRect.set(0, 0, mContentRect.width(),
                     mMaxTextHeight + 2 * mTextVerticalSpacing);
         }
-        Log.d(TAG, "onSizeChanged: textRect: " + mTextRect.toShortString());
-
         final int contentCentY = mContentRect.centerY();
         int position = contentCentY / mTextRect.height();
         if (contentCentY % mTextRect.height() > 0) {
@@ -259,13 +242,17 @@ public final class WheelView extends View {
         }
         mSelctedRect.set(0, mTextRect.height() * (position - 1),
                 mContentRect.width(), mTextRect.height() * position);
-        Log.d(TAG, "onSizeChanged: selectedRect: " + mSelctedRect.toShortString());
         calculateDistanceY();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+        if (mNeedCalculate) {
+            mNeedCalculate = false;
+            calculate();
+        }
 
         canvas.clipRect(mContentRect);
 
@@ -323,6 +310,7 @@ public final class WheelView extends View {
         canvas.restoreToCount(saveCount);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (!hasDataSource()) {
@@ -362,7 +350,7 @@ public final class WheelView extends View {
                 }
                 final int pointerIndex = event.findPointerIndex(activePointerId);
                 if (pointerIndex == -1) {
-                    Log.e(TAG, "onTouchEvent: invalid pointer index");
+                    Log.e(TAG,"onTouchEvent: invalid pointer index");
                     break;
                 }
                 final float moveY = event.getY(pointerIndex);
@@ -392,12 +380,10 @@ public final class WheelView extends View {
                 final VelocityTracker velocityTracker = mVelocityTracker;
                 velocityTracker.computeCurrentVelocity(1000, mMaximumFlingVelocity);
                 if (Math.abs(velocityTracker.getYVelocity()) > mMinimumFlingVelocity) {
-                    Log.d(TAG, "onTouchEvent: velocityTracker: " + velocityTracker.getYVelocity());
                     mScroller.fling(0, 0, 0, (int) velocityTracker.getYVelocity(),
                             0, 0, -mMaximumDistanceY, mMaximumDistanceY);
                     mFlingY = mScroller.getStartY();
                     mIsBeingFling = true;
-                    Log.d(TAG, "onTouchEvent: startFling");
                     postInvalidateOnAnimation();
                 } else {
                     correctionDistanceY();
@@ -407,7 +393,6 @@ public final class WheelView extends View {
                 resetVelocityTracker();
                 break;
             case MotionEvent.ACTION_CANCEL:
-                Log.d(TAG, "onTouchEvent: ACTION_CANCEL");
                 mIsBeingFling = false;
                 mActivePointerId = INVALID_POINTER;
                 mIsBeingDragged = false;
@@ -477,9 +462,7 @@ public final class WheelView extends View {
         for (String text : mDataSources) {
             mMaxTextWidth = (int) Math.max(mTextPaint.measureText(text), mMaxTextWidth);
         }
-        Log.d(TAG, "calculateTextSize: maxTextWidth: " + mMaxTextWidth + ";maxTextHeight: " + mMaxTextHeight);
         mTextRect.set(0, 0, mMaxTextWidth, mMaxTextHeight + 2 * mTextVerticalSpacing);
-        Log.d(TAG, "calculateTextSize: textRect: " + mTextRect.toShortString());
         calculateDistanceY();
     }
 
@@ -490,9 +473,6 @@ public final class WheelView extends View {
             return;
         }
         mMaximumDistanceY = mTextRect.height() * (mDataSources.size() - 1);
-        Log.d(TAG, "calculateDistanceY: max distance: " + mMaximumDistanceY);
-        mDistanceY = mSelectPosition * mTextRect.height();
-        Log.d(TAG, "calculateDistanceY");
     }
 
     private PointF calculateTextGravity(String text) {
@@ -517,8 +497,8 @@ public final class WheelView extends View {
             case Gravity.START:
                 pointF.x = mTextRect.left;
                 break;
-            case Gravity.RIGHT:
             case Gravity.END:
+            case Gravity.RIGHT:
                 pointF.x = mTextRect.bottom - textSizeRect.width();
                 break;
             default:
@@ -531,7 +511,6 @@ public final class WheelView extends View {
     }
 
     private void correctionDistanceY() {
-        Log.d(TAG, "correctionDistanceY");
         if (mDistanceY % mTextRect.height() != 0) {
             int position = mDistanceY / mTextRect.height();
             int remainder = mDistanceY % mTextRect.height();
@@ -541,7 +520,6 @@ public final class WheelView extends View {
             int newDistanceY = position * mTextRect.height();
             animChangeDistanceY(newDistanceY);
         }
-
     }
 
     private void animChangeDistanceY(int newDistanceY) {
@@ -556,12 +534,9 @@ public final class WheelView extends View {
                 mRunAnimator.cancel();
             }
             mRunAnimator = ValueAnimator.ofInt(mDistanceY, newDistanceY);
-            mRunAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    mDistanceY = (int) animation.getAnimatedValue();
-                    postInvalidateOnAnimation();
-                }
+            mRunAnimator.addUpdateListener(animation -> {
+                mDistanceY = (int) animation.getAnimatedValue();
+                postInvalidateOnAnimation();
             });
             mRunAnimator.start();
         }
@@ -597,14 +572,5 @@ public final class WheelView extends View {
         return mDataSources != null && !mDataSources.isEmpty();
     }
 
-    private int sp2px(float sp) {
-        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
-                sp, getResources().getDisplayMetrics()));
-    }
-
-    private int dp2px(float dp) {
-        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                dp, getResources().getDisplayMetrics()));
-    }
 
 }

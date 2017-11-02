@@ -49,7 +49,7 @@ public final class WheelView extends View {
     private int mSelectedLineColor = Color.BLACK;
     private int mTextGravity = Gravity.CENTER;
     private CallBack mCallBack;
-    private int mSelectPosition = -1;
+    private int mSelectPosition;
 
     private final Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mDrawPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -60,7 +60,8 @@ public final class WheelView extends View {
     /** 单个文字最大的尺寸 */
     private int mMaxTextWidth, mMaxTextHeight;
     private int mDistanceY;
-    private int mMaximumDistanceY, mMinimumDistanceY;
+    private int mMaximumDistanceY;
+    private int mMinimumDistanceY;
     private boolean mNeedCalculate;
     /** touch */
     private boolean mIsBeingDragged;
@@ -76,11 +77,10 @@ public final class WheelView extends View {
     private float mFlingY;
     private ValueAnimator mRunAnimator;
 
-    private static final String TAG = "WheelView";
-
     private static final int DEFALUT_VISIBILITY_COUNT = 5;
     private static final int AUTO_VISIBILITY_COUNT = -1;
     private static final int INVALID_POINTER = -1;
+    private static final String TAG = "WheelView";
 
     private static final Pools.Pool<Rect> RECT_POOL = new Pools.SimplePool<>(20);
 
@@ -131,6 +131,10 @@ public final class WheelView extends View {
         if (position > (mDataSources.size() - 1) || position < 0) {
             return;
         }
+        if (mMaximumDistanceY == 0) {
+            calculate();
+        }
+        mSelectPosition = position;
         int newDistance = position * mTextRect.height();
         animChangeDistanceY(newDistance);
     }
@@ -140,7 +144,7 @@ public final class WheelView extends View {
             return;
         }
         mDataSources = dataSources;
-        mSelectPosition = -1;
+        setSelectPosition(0);
         requestLayout();
         postInvalidateOnAnimation();
     }
@@ -263,7 +267,8 @@ public final class WheelView extends View {
                 selctPosition++;
             }
             selctPosition = Math.min(selctPosition, mDataSources.size() - 1);
-            if (!mIsBeingDragged && !mIsBeingFling && mSelectPosition != selctPosition) {
+            if (!mIsBeingDragged && !mIsBeingFling && mSelectPosition != selctPosition &&
+                    (mRunAnimator == null || !mRunAnimator.isRunning())) {
                 if (mCallBack != null) {
                     mCallBack.onPositionSelect(selctPosition);
                 }
@@ -350,7 +355,7 @@ public final class WheelView extends View {
                 }
                 final int pointerIndex = event.findPointerIndex(activePointerId);
                 if (pointerIndex == -1) {
-                    Log.e(TAG,"onTouchEvent: invalid pointer index");
+                    Log.e(TAG, "onTouchEvent: invalid pointer index");
                     break;
                 }
                 final float moveY = event.getY(pointerIndex);
